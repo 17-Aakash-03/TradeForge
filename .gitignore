@@ -1,0 +1,15 @@
+backend/venv/
+backend/__pycache__/
+backend/app/__pycache__/
+backend/app/**/__pycache__/
+*.pyc
+backend/.env
+backend/app/models_saved/*.keras
+backend/app/models_saved/*.pkl
+frontend/node_modules/
+frontend/dist/
+node_modules/
+src/
+.docker/
+.DS_Store
+Thumbs.db
