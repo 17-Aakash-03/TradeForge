@@ -38,7 +38,21 @@ export const stockAPI = {
   sendAlert: (ticker, email) =>
     api.post('/alert/send', { ticker, to_email: email }),
   testAlert: () =>
-    api.post('/alert/test')
+    api.post('/alert/test'),
+  portfolioBacktest: (tickers, capital) =>
+    api.post('/portfolio/backtest', { tickers, capital }),
+  paperAutoTrade: (ticker) =>
+    api.post(`/paper/auto-trade/${ticker}`),
+  paperPortfolio: () =>
+    api.get('/paper/portfolio'),
+  paperReset: () =>
+    api.post('/paper/reset'),
+  retrainStatus: () =>
+    api.get('/retrain/status'),
+  retrainRun: (force = false) =>
+    api.post(`/retrain/run?force=${force}`),
+  chartData: (ticker, days = 90) =>
+    api.get(`/chart/${ticker}?days=${days}`)
 }
 
 export default api
