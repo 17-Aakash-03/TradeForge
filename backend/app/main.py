@@ -61,9 +61,12 @@ class PaperTradeRequest(BaseModel):
 
 @app.on_event("startup")
 def startup():
-    create_tables()
-    print("Tables created successfully")
-    print("TradeForge database tables created successfully!")
+    try:
+        create_tables()
+        print("TradeForge database tables created successfully!")
+    except Exception as e:
+        print(f"Database startup warning: {e}")
+        print("App will continue — check DATABASE_URL environment variable")
 
 @app.get("/")
 def root():
