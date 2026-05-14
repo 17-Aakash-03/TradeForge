@@ -26,7 +26,10 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "https://tradeforge-frontend.onrender.com"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -249,47 +252,32 @@ def get_sentiment(ticker: str,
     from app.services.sentiment import get_sentiment_analysis
     return get_sentiment_analysis(ticker, settings.news_api_key)
 
-@app.get("/chart/{ticker}")
-def get_chart_data(
+@app.get("/report/{ticker}")
+def download_report(
     ticker: str,
-    days: int = 90,
-    current_user: User = Depends(get_authenticated_user),
-    db: Session = Depends(get_db)
-):
-    from app.models.stock import StockPrice
-    from sqlalchemy import desc
-    rows = db.query(StockPrice).filter(
-        StockPrice.ticker == ticker
-    ).order_by(desc(StockPrice.date)).limit(days).all()
-
-    if not rows:
+    capital: float = 100000.0,
+    token: str = None,
+    db: Session = Depends(get_db)):
+    from app.services.feature_engineer import get_features_for_ticker
+    from app.services.backtester import run_backtest
+    from app.services.pdf_report import generate_backtest_report
+    from app.services.auth import get_current_user
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = get_current_user(token, db)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    df = get_features_for_ticker(ticker, db)
+    if df.empty:
         return {"error": f"No data found for {ticker}"}
-
-    rows = sorted(rows, key=lambda x: x.date)
-
-    candles = []
-    volumes = []
-    for row in rows:
-        date_str = row.date.strftime('%Y-%m-%d')
-        candles.append({
-            "time": date_str,
-            "open": round(float(row.open), 2),
-            "high": round(float(row.high), 2),
-            "low": round(float(row.low), 2),
-            "close": round(float(row.close), 2),
-        })
-        volumes.append({
-            "time": date_str,
-            "value": round(float(row.volume), 0),
-            "color": "#00d4aa44" if float(row.close) >= float(row.open) else "#ff444444"
-        })
-
-    return {
-        "ticker": ticker,
-        "candles": candles,
-        "volumes": volumes,
-        "total_candles": len(candles)
-    }
+    backtest_data = run_backtest(ticker, df, initial_capital=capital)
+    pdf_bytes = generate_backtest_report(backtest_data, ticker)
+    filename = f"TradeForge_{ticker}_{capital:.0f}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 @app.post("/alert/send")
 def send_alert(body: AlertRequest,
@@ -409,16 +397,16 @@ def get_chart_data(
     candles = []
     volumes = []
     for row in rows:
-        timestamp = int(row.date.timestamp())
+        date_str = row.date.strftime('%Y-%m-%d')
         candles.append({
-            "time": timestamp,
+            "time": date_str,
             "open": round(float(row.open), 2),
             "high": round(float(row.high), 2),
             "low": round(float(row.low), 2),
             "close": round(float(row.close), 2),
         })
         volumes.append({
-            "time": timestamp,
+            "time": date_str,
             "value": round(float(row.volume), 0),
             "color": "#00d4aa44" if float(row.close) >= float(row.open) else "#ff444444"
         })
