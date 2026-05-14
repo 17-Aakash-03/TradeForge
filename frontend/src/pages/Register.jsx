@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { authAPI } from '../services/api'
+import AnimatedBackground from '../components/AnimatedBackground'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -8,70 +9,87 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
-    setLoading(true)
+    setLoading(true); setError('')
     try {
-      await register(email, username, password)
-      navigate('/dashboard')
+      await authAPI.register(email, username, password)
+      navigate('/login')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Registration failed')
-    } finally {
-      setLoading(false)
-    }
+      setError(err.response?.data?.detail || 'Registration failed.')
+    } finally { setLoading(false) }
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.logo}>TradeForge</h1>
-        <p style={styles.subtitle}>Create your free account</p>
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <input style={styles.input} type="email" placeholder="Email"
-            value={email} onChange={e => setEmail(e.target.value)} required />
-          <input style={styles.input} type="text" placeholder="Username"
-            value={username} onChange={e => setUsername(e.target.value)} required />
-          <input style={styles.input} type="password" placeholder="Password"
-            value={password} onChange={e => setPassword(e.target.value)} required />
-          {error && <p style={styles.error}>{error}</p>}
-          <button style={styles.button} type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create Account'}
+    <div style={{ minHeight:'100vh', background:'#080808', display:'flex', alignItems:'center', justifyContent:'center', padding:'24px', position:'relative' }}>
+      <AnimatedBackground />
+      <div style={{
+        position:'relative', zIndex:1, width:'100%', maxWidth:'420px',
+        background:'rgba(10,10,10,0.88)', backdropFilter:'blur(30px)',
+        WebkitBackdropFilter:'blur(30px)',
+        borderRadius:'20px', border:'1px solid rgba(0,212,170,0.2)',
+        padding:'44px 40px',
+        boxShadow:'0 0 0 1px rgba(0,212,170,0.05), 0 40px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
+        animation:'fadeInUp 0.6s ease'
+      }}>
+        <div style={{ textAlign:'center', marginBottom:'40px' }}>
+          <span style={{
+            fontSize:'34px', fontWeight:'700', letterSpacing:'-1px',
+            background:'linear-gradient(135deg, #00ffcc 0%, #00d4aa 40%, #00a884 100%)',
+            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+            animation:'logoGlow 3s ease-in-out infinite', display:'inline-block'
+          }}>TradeForge</span>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', marginTop:'10px' }}>
+            <div style={{ height:'1px', width:'40px', background:'linear-gradient(90deg, transparent, rgba(0,212,170,0.3))' }} />
+            <span style={{ color:'rgba(0,212,170,0.5)', fontSize:'10px', letterSpacing:'0.15em', textTransform:'uppercase' }}>AI-Powered Trading</span>
+            <div style={{ height:'1px', width:'40px', background:'linear-gradient(90deg, rgba(0,212,170,0.3), transparent)' }} />
+          </div>
+        </div>
+
+        <h2 style={{ color:'#fff', fontSize:'20px', fontWeight:'600', marginBottom:'4px' }}>Create account</h2>
+        <p style={{ color:'#444', fontSize:'13px', marginBottom:'28px' }}>Start trading with AI signals for free</p>
+
+        {error && (
+          <div style={{ background:'rgba(255,80,80,0.08)', border:'1px solid rgba(255,80,80,0.2)', borderRadius:'10px', padding:'12px 14px', marginBottom:'20px', color:'#ff6b6b', fontSize:'13px' }}>
+            ⚠️ {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          {[
+            { lbl:'Email', type:'email', val:email, set:setEmail, ph:'you@email.com' },
+            { lbl:'Username', type:'text', val:username, set:setUsername, ph:'username' },
+            { lbl:'Password', type:'password', val:password, set:setPassword, ph:'••••••••' }
+          ].map(({ lbl, type, val, set, ph }) => (
+            <div key={lbl} style={{ marginBottom:'16px' }}>
+              <label style={{ color:'#444', fontSize:'10px', textTransform:'uppercase', letterSpacing:'0.1em', display:'block', marginBottom:'7px' }}>{lbl}</label>
+              <input type={type} placeholder={ph} value={val} onChange={e => set(e.target.value)} required
+                style={{ width:'100%', padding:'12px 14px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.07)', background:'rgba(255,255,255,0.03)', color:'#fff', fontSize:'14px', outline:'none', transition:'all 0.2s' }}
+                onFocus={e => Object.assign(e.target.style, { borderColor:'rgba(0,212,170,0.5)', boxShadow:'0 0 0 3px rgba(0,212,170,0.08)' })}
+                onBlur={e => Object.assign(e.target.style, { borderColor:'rgba(255,255,255,0.07)', boxShadow:'none' })}
+              />
+            </div>
+          ))}
+          <button type="submit" disabled={loading}
+            style={{
+              width:'100%', padding:'14px', borderRadius:'10px', border:'none',
+              background: loading ? 'rgba(0,212,170,0.15)' : 'linear-gradient(135deg, #00d4aa, #00b894)',
+              color: loading ? '#00d4aa' : '#000',
+              fontSize:'14px', fontWeight:'700', cursor: loading ? 'not-allowed' : 'pointer',
+              boxShadow: loading ? 'none' : '0 4px 30px rgba(0,212,170,0.4)',
+              transition:'all 0.2s', marginTop:'8px'
+            }}>
+            {loading ? '⏳ Creating...' : 'Create Account →'}
           </button>
         </form>
-        <p style={styles.link}>
+
+        <p style={{ color:'#333', fontSize:'13px', textAlign:'center', marginTop:'24px' }}>
           Already have an account?{' '}
-          <Link to="/login" style={styles.linkText}>Login here</Link>
+          <Link to="/login" style={{ color:'#00d4aa', textDecoration:'none', fontWeight:'600' }}>Sign in</Link>
         </p>
       </div>
     </div>
   )
-}
-
-const styles = {
-  container: {
-    minHeight: '100vh', display: 'flex',
-    alignItems: 'center', justifyContent: 'center', background: '#0f0f0f'
-  },
-  card: {
-    background: '#1a1a1a', padding: '40px', borderRadius: '12px',
-    width: '100%', maxWidth: '400px', border: '1px solid #2a2a2a'
-  },
-  logo: { color: '#00d4aa', fontSize: '28px', fontWeight: 'bold', textAlign: 'center', margin: '0 0 8px' },
-  subtitle: { color: '#888', textAlign: 'center', fontSize: '14px', marginBottom: '32px' },
-  form: { display: 'flex', flexDirection: 'column', gap: '16px' },
-  input: {
-    padding: '12px 16px', borderRadius: '8px', border: '1px solid #333',
-    background: '#242424', color: '#fff', fontSize: '14px', outline: 'none'
-  },
-  button: {
-    padding: '12px', borderRadius: '8px', border: 'none',
-    background: '#00d4aa', color: '#000', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer'
-  },
-  error: { color: '#ff4444', fontSize: '13px', textAlign: 'center' },
-  link: { color: '#888', textAlign: 'center', marginTop: '20px', fontSize: '14px' },
-  linkText: { color: '#00d4aa', textDecoration: 'none' }
 }

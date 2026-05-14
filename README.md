@@ -89,3 +89,95 @@ pip install -r requirements.txt
 ```
 
 **3. Create `.env` file in backend/:**
+
+DATABASE_URL=postgresql://postgres:yourpassword@localhost/tradeforge_db
+JWT_SECRET_KEY=your-secret-key
+NEWS_API_KEY=your-newsapi-key
+EMAIL_SENDER=your@gmail.com
+EMAIL_PASSWORD=your-app-password
+ENVIRONMENT=development
+
+**4. Start backend:**
+```bash
+uvicorn app.main:app --reload
+```
+
+**5. Frontend setup:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+**6. Load data and train models:**
+```bash
+# Load stock data
+curl -X POST http://127.0.0.1:8000/data/load
+
+# Train models
+python train_all.py
+```
+
+### Docker Setup
+```bash
+docker-compose up --build
+```
+
+---
+
+## 📊 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login` | Login and get JWT token |
+| GET | `/predict/{ticker}` | Get AI signal for a stock |
+| GET | `/backtest/{ticker}` | Run strategy backtest |
+| POST | `/portfolio/backtest` | Multi-stock portfolio backtest |
+| GET | `/explain/{ticker}` | SHAP feature explanation |
+| GET | `/sentiment/{ticker}` | FinBERT news sentiment |
+| GET | `/report/{ticker}` | Download PDF report |
+| POST | `/paper/auto-trade/{ticker}` | Execute paper trade |
+| GET | `/paper/portfolio` | Get paper portfolio status |
+| GET | `/retrain/status` | Check model freshness |
+| POST | `/retrain/run` | Trigger model retraining |
+| GET | `/chart/{ticker}` | Get OHLCV chart data |
+
+Full API docs: `http://localhost:8000/docs`
+
+---
+
+## 🧪 Testing
+
+```bash
+cd backend
+python tests/test_api.py
+```
+
+All 12 API tests pass ✓
+
+---
+
+## 📁 Project Structure
+
+TradeForge/
+├── backend/
+│   ├── app/
+│   │   ├── models/          # SQLAlchemy models
+│   │   ├── services/        # AI models, backtester, etc.
+│   │   ├── main.py          # FastAPI app
+│   │   ├── config.py        # Settings
+│   │   └── database.py      # DB connection
+│   ├── tests/               # API tests
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # CandlestickChart
+│   │   ├── pages/           # Dashboard, Login, Register
+│   │   ├── context/         # AuthContext
+│   │   └── services/        # API calls
+│   ├── package.json
+│   └── Dockerfile
+├── docker-compose.yml
+├── .github/workflows/ci.yml
+└── README.md
