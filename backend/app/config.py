@@ -1,17 +1,26 @@
-from pydantic_settings import BaseSettings
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from app.config import settings
 
-class Settings(BaseSettings):
-    app_name: str = "TradeForge"
-    database_url: str
-    redis_url: str = "redis://localhost:6379"
-    jwt_secret_key: str
-    jwt_algorithm: str = "HS256"
-    environment: str = "development"
-    news_api_key: str = ""
-    email_sender: str = ""
-    email_password: str = ""
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    connect_args={} if "postgresql" in settings.database_url else {}
+)
 
-    class Config:
-        env_file = ".env"
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-settings = Settings()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def create_tables():
+    from app.models.stock import StockBase
+    from app.models.user import UserBase
+    StockBase.metadata.create_all(bind=engine)
+    UserBase.metadata.create_all(bind=engine)
