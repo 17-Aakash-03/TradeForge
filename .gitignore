@@ -10,7 +10,6 @@ backend/app/models_saved/*.pkl
 frontend/node_modules/
 frontend/dist/
 node_modules/
-src/
 .docker/
 .DS_Store
 Thumbs.db
