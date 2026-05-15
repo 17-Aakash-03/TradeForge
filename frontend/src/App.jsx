@@ -4,34 +4,40 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
-  if (loading) return (
-    <div style={{color:'#fff', textAlign:'center', padding:'50px', background:'#0f0f0f', minHeight:'100vh'}}>
-      Loading...
-    </div>
-  )
-  if (!user) return <Navigate to="/login" />
-  return children
+function PrivateRoute({ children }) {
+  const { token } = useAuth()
+  return token ? children : <Navigate to="/login" />
 }
 
-function App() {
+function PublicRoute({ children }) {
+  const { token } = useAuth()
+  return !token ? children : <Navigate to="/dashboard" />
+}
+
+function AppRoutes() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <Routes>
+      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/login" element={
+        <PublicRoute><Login /></PublicRoute>
+      } />
+      <Route path="/register" element={
+        <PublicRoute><Register /></PublicRoute>
+      } />
+      <Route path="/dashboard" element={
+        <PrivateRoute><Dashboard /></PrivateRoute>
+      } />
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
   )
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}
