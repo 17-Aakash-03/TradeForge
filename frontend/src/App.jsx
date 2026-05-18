@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import ForgotPassword from './pages/ForgotPassword'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -27,6 +28,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={
         <PrivateRoute><Dashboard /></PrivateRoute>
       } />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   )

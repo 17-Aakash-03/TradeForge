@@ -180,6 +180,13 @@ export default function Login() {
           </button>
         </form>
 
+        {/* ✅ NEW: Forgot password link */}
+        <p style={{ color:'#333', fontSize:'13px', textAlign:'center', marginTop:'16px' }}>
+          <Link to="/forgot-password" style={{ color:'rgba(0,212,170,0.6)', textDecoration:'none' }}>
+            Forgot password?
+          </Link>
+        </p>
+
         <p style={{ color:'#333', fontSize:'13px', textAlign:'center', marginTop:'24px' }}>
           No account?{' '}
           <Link to="/register" style={{ color:'#00d4aa', textDecoration:'none', fontWeight:'600' }}>Create one free</Link>

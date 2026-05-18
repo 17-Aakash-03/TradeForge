@@ -59,6 +59,10 @@ class PaperTradeRequest(BaseModel):
     ticker: str
     signal: str
 
+class ResetPasswordRequest(BaseModel):
+    email: str
+    new_password: str
+
 @app.on_event("startup")
 def startup():
     try:
@@ -66,7 +70,6 @@ def startup():
         print("TradeForge database tables created successfully!")
     except Exception as e:
         print(f"Database startup warning: {e}")
-        print("App will continue — check DATABASE_URL environment variable")
 
 @app.get("/")
 def root():
@@ -118,6 +121,17 @@ def upgrade_to_pro(body: UpgradeRequest, db: Session = Depends(get_db)):
     user.tier = "pro"
     db.commit()
     return {"message": f"{user.email} upgraded to Pro tier", "tier": user.tier}
+
+@app.post("/auth/reset-password")
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+    from app.models.user import User as UserModel
+    from app.services.auth import hash_password
+    user = db.query(UserModel).filter(UserModel.email == body.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No account found with this email")
+    user.hashed_password = hash_password(body.new_password)
+    db.commit()
+    return {"message": "Password reset successfully"}
 
 @app.post("/data/load")
 def load_data(db: Session = Depends(get_db)):

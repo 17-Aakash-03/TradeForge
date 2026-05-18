@@ -20,7 +20,9 @@ export const authAPI = {
     api.post('/auth/register', { email, username, password }),
   login: (email, password) =>
     api.post('/auth/login', { email, password }),
-  me: () => api.get('/auth/me')
+  me: () => api.get('/auth/me'),
+  resetPassword: (email, newPassword) =>
+    api.post('/auth/reset-password', { email, new_password: newPassword }),
 }
 
 export const stockAPI = {
