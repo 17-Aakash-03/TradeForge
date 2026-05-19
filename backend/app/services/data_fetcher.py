@@ -8,6 +8,21 @@ TICKERS = [
     "RELIANCE.NS",
     "TCS.NS",
     "BTC-USD",
+    "INFY.NS",
+    "HDFCBANK.NS",
+    "ICICIBANK.NS",
+    "WIPRO.NS",
+    "ADANIENT.NS",
+    "BAJFINANCE.NS",
+    "ITC.NS",
+    "AAPL",
+    "GOOGL",
+    "MSFT",
+    "TSLA",
+    "AMZN",
+    "ETH-USD",
+    "^NSEI",
+    "^GSPC",
 ]
 
 def fetch_and_save(ticker: str, start: str, end: str, db: Session):

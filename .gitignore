@@ -5,8 +5,6 @@ backend/app/**/__pycache__/
 __pycache__/
 *.pyc
 backend/.env
-backend/app/models_saved/*.keras
-backend/app/models_saved/*.pkl
 frontend/node_modules/
 frontend/dist/
 node_modules/
