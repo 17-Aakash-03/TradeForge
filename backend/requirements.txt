@@ -1,4 +1,4 @@
-﻿absl-py==2.4.0
+absl-py==2.4.0
 alembic==1.18.4
 annotated-doc==0.0.4
 annotated-types==0.7.0
@@ -114,3 +114,7 @@ wheel==0.46.3
 wrapt==2.1.2
 xgboost==3.2.0
 yfinance==1.2.0
+<<<<<<< HEAD
+=======
+
+>>>>>>> 15e90e05aa03375747a212e9e1d9b643d541751e
