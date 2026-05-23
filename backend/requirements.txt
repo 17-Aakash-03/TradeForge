@@ -114,4 +114,3 @@ wheel==0.46.3
 wrapt==2.1.2
 xgboost==3.2.0
 yfinance==1.2.0
-pandas_ta @ git+https://github.com/twopirllc/pandas-ta.git@development
