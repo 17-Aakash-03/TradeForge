@@ -1,9 +1,30 @@
 import pandas as pd
-import pandas_ta as ta
+import numpy as np
 from sqlalchemy.orm import Session
 from app.models.stock import StockPrice
 
-def get_stock_dataframe(ticker: str, db: Session) -> pd.DataFrame:
+def calculate_rsi(prices, period=14):
+    delta = prices.diff()
+    gain = delta.where(delta > 0, 0).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+def calculate_macd(prices, fast=12, slow=26, signal=9):
+    ema_fast = prices.ewm(span=fast).mean()
+    ema_slow = prices.ewm(span=slow).mean()
+    macd = ema_fast - ema_slow
+    signal_line = macd.ewm(span=signal).mean()
+    return macd, signal_line
+
+def calculate_bollinger(prices, period=20):
+    sma = prices.rolling(window=period).mean()
+    std = prices.rolling(window=period).std()
+    upper = sma + (std * 2)
+    lower = sma - (std * 2)
+    return upper, sma, lower
+
+def get_features_for_ticker(ticker: str, db: Session) -> pd.DataFrame:
     rows = db.query(StockPrice).filter(
         StockPrice.ticker == ticker
     ).order_by(StockPrice.date).all()
@@ -12,49 +33,69 @@ def get_stock_dataframe(ticker: str, db: Session) -> pd.DataFrame:
         return pd.DataFrame()
 
     df = pd.DataFrame([{
-        "date": r.date,
-        "open": r.open,
-        "high": r.high,
-        "low": r.low,
-        "close": r.close,
-        "volume": r.volume
+        'date': r.date,
+        'open': float(r.open),
+        'high': float(r.high),
+        'low': float(r.low),
+        'close': float(r.close),
+        'volume': float(r.volume)
     } for r in rows])
 
-    df.set_index("date", inplace=True)
-    return df
+    df.set_index('date', inplace=True)
 
-def add_features(df: pd.DataFrame) -> pd.DataFrame:
-    if df.empty or len(df) < 60:
-        return df
+    # RSI
+    df['rsi'] = calculate_rsi(df['close'], 14)
 
-    df["rsi"] = ta.rsi(df["close"], length=14)
-    df["ema_20"] = ta.ema(df["close"], length=20)
-    df["ema_50"] = ta.ema(df["close"], length=50)
+    # MACD
+    df['macd'], df['macd_signal'] = calculate_macd(df['close'])
+    df['macd_hist'] = df['macd'] - df['macd_signal']
 
-    macd = ta.macd(df["close"])
-    if macd is not None and not macd.empty:
-        df["macd"] = macd.iloc[:, 0]
-        df["macd_signal"] = macd.iloc[:, 1]
+    # Bollinger Bands
+    df['bb_upper'], df['bb_mid'], df['bb_lower'] = calculate_bollinger(df['close'])
 
-    bbands = ta.bbands(df["close"], length=20)
-    if bbands is not None and not bbands.empty:
-        df["bb_upper"] = bbands.iloc[:, 2]
-        df["bb_mid"] = bbands.iloc[:, 1]
-        df["bb_lower"] = bbands.iloc[:, 0]
+    # EMA
+    df['ema_20'] = df['close'].ewm(span=20).mean()
+    df['ema_50'] = df['close'].ewm(span=50).mean()
 
-    df["atr"] = ta.atr(df["high"], df["low"], df["close"], length=14)
-    df["obv"] = ta.obv(df["close"], df["volume"])
+    # ATR
+    high_low = df['high'] - df['low']
+    high_close = (df['high'] - df['close'].shift()).abs()
+    low_close = (df['low'] - df['close'].shift()).abs()
+    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+    df['atr'] = tr.rolling(14).mean()
 
-    df["returns"] = df["close"].pct_change()
-    df["volatility"] = df["returns"].rolling(20).std()
+    # OBV
+    obv = [0]
+    for i in range(1, len(df)):
+        if df['close'].iloc[i] > df['close'].iloc[i-1]:
+            obv.append(obv[-1] + df['volume'].iloc[i])
+        elif df['close'].iloc[i] < df['close'].iloc[i-1]:
+            obv.append(obv[-1] - df['volume'].iloc[i])
+        else:
+            obv.append(obv[-1])
+    df['obv'] = obv
+
+    # Returns and lags
+    df['returns'] = df['close'].pct_change()
+    df['returns_lag1'] = df['returns'].shift(1)
+    df['macd_lag1'] = df['macd'].shift(1)
+    df['macd_lag2'] = df['macd'].shift(2)
+    df['rsi_lag5'] = df['rsi'].shift(5)
+    df['volatility_20'] = df['returns'].rolling(20).std()
+    df['day_high'] = df['high']
 
     df.dropna(inplace=True)
-    return df
 
-def get_features_for_ticker(ticker: str, db: Session) -> pd.DataFrame:
-    df = get_stock_dataframe(ticker, db)
-    if df.empty:
-        return df
-    df = add_features(df)
+    feature_cols = [
+        'open', 'high', 'low', 'close', 'volume',
+        'rsi', 'macd', 'macd_signal', 'macd_hist',
+        'bb_upper', 'bb_lower',
+        'ema_20', 'ema_50', 'atr', 'obv',
+        'returns', 'returns_lag1'
+    ]
+
+    available = [c for c in feature_cols if c in df.columns]
+    df = df[available]
+
     print(f"{ticker}: {len(df)} rows with {len(df.columns)} features")
     return df
