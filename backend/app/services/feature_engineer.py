@@ -78,24 +78,31 @@ def get_features_for_ticker(ticker: str, db: Session) -> pd.DataFrame:
     # Returns and lags
     df['returns'] = df['close'].pct_change()
     df['returns_lag1'] = df['returns'].shift(1)
+    df['returns_lag2'] = df['returns'].shift(2)
+    df['returns_lag3'] = df['returns'].shift(3)
     df['macd_lag1'] = df['macd'].shift(1)
     df['macd_lag2'] = df['macd'].shift(2)
+    df['rsi_lag1'] = df['rsi'].shift(1)
     df['rsi_lag5'] = df['rsi'].shift(5)
-    df['volatility_20'] = df['returns'].rolling(20).std()
+
+    # Volatility
+    df['volatility'] = df['returns'].rolling(20).std()
+    df['volatility_10'] = df['returns'].rolling(10).std()
+
+    # Additional features
+    df['high_low_ratio'] = df['high'] / df['low']
+    df['close_open_ratio'] = df['close'] / df['open']
+    df['volume_ma'] = df['volume'].rolling(20).mean()
+    df['volume_ratio'] = df['volume'] / df['volume_ma']
+    df['price_momentum'] = df['close'] / df['close'].shift(10) - 1
+    df['rsi_signal'] = (df['rsi'] > 70).astype(int) - (df['rsi'] < 30).astype(int)
+    df['macd_cross'] = (df['macd'] > df['macd_signal']).astype(int)
+    df['bb_position'] = (df['close'] - df['bb_lower']) / (df['bb_upper'] - df['bb_lower'])
+    df['ema_cross'] = (df['ema_20'] > df['ema_50']).astype(int)
     df['day_high'] = df['high']
+    df['day_low'] = df['low']
 
     df.dropna(inplace=True)
-
-    feature_cols = [
-        'open', 'high', 'low', 'close', 'volume',
-        'rsi', 'macd', 'macd_signal', 'macd_hist',
-        'bb_upper', 'bb_lower',
-        'ema_20', 'ema_50', 'atr', 'obv',
-        'returns', 'returns_lag1'
-    ]
-
-    available = [c for c in feature_cols if c in df.columns]
-    df = df[available]
 
     print(f"{ticker}: {len(df)} rows with {len(df.columns)} features")
     return df
